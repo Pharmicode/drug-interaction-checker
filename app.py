@@ -63,3 +63,7 @@ if st.button("Check Interactions"):
                 st.success(n)
         else:
             st.write("No explicit cross-mentions found in 'Drug Interactions'.")
+
+
+st.markdown("---")
+st.caption("⚠️ Informational only — not a clinical decision tool. Always consult authoritative interaction resources and a pharmacist.")
