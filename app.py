@@ -71,12 +71,26 @@ st.markdown(
 )
 
 st.markdown(
-    "<div style='text-align:center' class='muted'>"
-    "Prototype tool to retrieve FDA label excerpts and screen for potential cross-mentions between two medications."
-    "</div>",
+    """
+    <div style='text-align:center' class='muted'>
+      Prototype clinical tool to retrieve FDA label excerpts and screen for potential
+      cross-mentions between two medications.
+    </div>
+    """,
     unsafe_allow_html=True,
 )
-st.markdown("---")
+
+st.markdown(
+    """
+    <div style='text-align:center; margin-top:0.25rem;' class='muted'>
+      Built for demonstration and learning purposes • Data source: openFDA Drug Labels API
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown("---")  # this is the bar, now clearly separating header from the form
+
 
 # ---- SIDEBAR (INFO ONLY) ----
 with st.sidebar:
@@ -92,6 +106,8 @@ with st.sidebar:
         "<div class='muted'>Developer: Jonathan Crandall, PharmD Candidate.</div>",
         unsafe_allow_html=True
     )
+    st.markdown("**Version**  \n0.1.0")
+    st.markdown("**Stack**  \nPython · Streamlit · openFDA Drug Labels API")
 
 # ---- IMPORT BACKEND ----
 try:
@@ -172,7 +188,14 @@ if check_btn:
         st.markdown("---")
         render_label_sections(drug2, s2)
 
+        
+
         st.markdown("### Cross-mention check")
+        st.markdown(
+            "<div class='muted'>In consideration of workflow tools the Suggested next step: confirm any potential interactions using your "
+            "organization’s primary interaction resource (e.g., Lexicomp, Micromedex) before making clinical decisions.</div>",
+            unsafe_allow_html=True
+            )
         if notes:
             st.markdown(
                 "<div class='result-warn'><strong>Potential interaction signals detected.</strong><br>"
@@ -189,6 +212,9 @@ if check_btn:
                 "Absence of cross-mention does not rule out clinically significant interactions.</div>",
                 unsafe_allow_html=True
             )
+
+        
+
 
         st.markdown('</div>', unsafe_allow_html=True)  # close result card
 
