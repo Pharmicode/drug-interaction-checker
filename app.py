@@ -1,69 +1,200 @@
 import streamlit as st
 
-st.set_page_config(page_title="Drug Interaction Checker", page_icon="💊")
+# ---- PAGE CONFIG ----
+st.set_page_config(
+    page_title="Runestone Holdings – Drug Interaction Checker",
+    page_icon="💊",
+    layout="centered"
+)
+
+# ---- LIGHT CSS FOR A MORE PROFESSIONAL LOOK ----
+st.markdown("""
+<style>
+/* Constrain width */
+.main > div {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Card container */
+.app-card {
+    background-color: #0f172a1a; /* works in dark + light themes */
+    padding: 1.4rem 1.6rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.35);
+    margin-bottom: 1.3rem;
+}
+
+/* Muted helper text */
+.muted {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Result badges */
+.result-ok {
+    background: #ecfdf5;
+    border-left: 4px solid #16a34a;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #14532d;
+    font-size: 0.95rem;
+}
+.result-info {
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #1d4ed8;
+    font-size: 0.95rem;
+}
+.result-warn {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #78350f;
+    font-size: 0.95rem;
+}
+
+/* Clean up Streamlit chrome if desired */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
+# ---- HEADER ----
+st.markdown(
+    "<h2 style='text-align: center;'>Runestone Holdings – Drug Interaction Label Checker</h2>",
+    unsafe_allow_html=True
+)
 
 st.markdown(
-    "<h2 style='text-align: center;'>🧙‍♂️ Runestone Holding's Drug Interaction Checker</h2>",
-    unsafe_allow_html=True
+    "<div style='text-align:center' class='muted'>"
+    "Prototype tool to retrieve FDA label excerpts and screen for potential cross-mentions between two medications."
+    "</div>",
+    unsafe_allow_html=True,
 )
 st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; font-size: 18px;'>"
-    "🧙‍♂️ Made by your brother — the wizard of drugs and code."
-    "</div>",
-    unsafe_allow_html=True
-)
-if st.sidebar.checkbox("🧙 Enable Wizard Mode"):
-    st.success("✨ The runes glow faintly… your interactions are revealed.")
 
-st.write("Enter two drug names to fetch FDA label excerpts and check for cross-mentions.")
+# ---- SIDEBAR (INFO ONLY) ----
+with st.sidebar:
+    st.markdown("### About")
+    st.markdown(
+        "<div class='muted'>"
+        "Internal prototype developed for educational and workflow support. "
+        "Data sourced from openFDA drug labels API."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div class='muted'>Developer: Jonathan Crandall, PharmD Candidate.</div>",
+        unsafe_allow_html=True
+    )
 
-# Try to import and show any error visibly in the app
+# ---- IMPORT BACKEND ----
 try:
     import src.openfda as openfda
     import_ok = True
 except Exception as e:
     import_ok = False
-    st.error("Failed to import helper module `src.openfda`.")
+    st.error("Failed to import helper module `src.openfda`. Please verify project structure.")
     st.exception(e)
 
-drug1 = st.text_input("First drug name")
-drug2 = st.text_input("Second drug name")
+# ---- INPUT CARD ----
+st.markdown('<div class="app-card">', unsafe_allow_html=True)
 
-if st.button("Check Interactions"):
+st.subheader("Drug selection")
+
+st.markdown(
+    "<div class='muted'>"
+    "Enter two drug names to retrieve key sections from the FDA label and identify any explicit cross-mentions "
+    "in interaction-related text."
+    "</div>",
+    unsafe_allow_html=True,
+)
+
+col1, col2 = st.columns(2)
+with col1:
+    drug1 = st.text_input("First drug name", placeholder="e.g., warfarin")
+with col2:
+    drug2 = st.text_input("Second drug name", placeholder="e.g., trimethoprim-sulfamethoxazole")
+
+st.caption("Spelling matters – prefer generic names where possible.")
+
+check_btn = st.button("Check interactions", type="primary")
+
+st.markdown('</div>', unsafe_allow_html=True)  # close app-card
+
+
+# ---- HELPER TO RENDER LABEL TEXT ----
+def render_label_sections(drug_name: str, sections: dict):
+    """Display label sections for a given drug."""
+    st.markdown(f"#### {drug_name.capitalize()} – label excerpts")
+
+    if not sections:
+        st.info("No FDA label data found for this drug.")
+        return
+
+    st.markdown(
+        "<div class='result-info'>"
+        "These excerpts are truncated. Refer to the full FDA label or an interaction database for complete information."
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    for key, text in sections.items():
+        section_title = key.replace("_", " ").title()
+        with st.expander(section_title, expanded=False):
+            preview = text[:1600] + ("..." if len(text) > 1600 else "")
+            st.write(preview)
+
+
+# ---- MAIN ACTION ----
+if check_btn:
     if not import_ok:
-        st.stop()  # Don't proceed if import failed
+        st.stop()
+
     if not drug1 or not drug2:
-        st.warning("Please enter both drug names.")
+        st.warning("Please enter both drug names before checking interactions.")
     else:
-        with st.spinner("Fetching FDA label data..."):
+        with st.spinner("Fetching FDA label data and scanning for cross-mentions..."):
             s1 = openfda.get_interaction_text(drug1)
             s2 = openfda.get_interaction_text(drug2)
+            notes = openfda.simple_crosscheck(drug1, drug2)
 
-        st.subheader(f"{drug1.capitalize()} Label Excerpts")
-        if s1:
-            for key, text in s1.items():
-                st.markdown(f"**{key.replace('_',' ').title()}**")
-                st.write(text[:1000] + ("..." if len(text) > 1000 else ""))
-        else:
-            st.info(f"No FDA label data found for {drug1}")
+        # RESULT CARD
+        st.markdown('<div class="app-card">', unsafe_allow_html=True)
+        st.subheader("Label-based interaction review")
 
-        st.subheader(f"{drug2.capitalize()} Label Excerpts")
-        if s2:
-            for key, text in s2.items():
-                st.markdown(f"**{key.replace('_',' ').title()}**")
-                st.write(text[:1000] + ("..." if len(text) > 1000 else ""))
-        else:
-            st.info(f"No FDA label data found for {drug2}")
+        render_label_sections(drug1, s1)
+        st.markdown("---")
+        render_label_sections(drug2, s2)
 
-        notes = openfda.simple_crosscheck(drug1, drug2)
-        st.subheader("Cross-mention Check")
+        st.markdown("### Cross-mention check")
         if notes:
+            st.markdown(
+                "<div class='result-warn'><strong>Potential interaction signals detected.</strong><br>"
+                "One medication appears to be referenced in the other’s interaction-related sections. "
+                "Review in context using full-label or dedicated interaction resources.</div>",
+                unsafe_allow_html=True
+            )
             for n in notes:
-                st.success(n)
+                st.write(f"• {n}")
         else:
-            st.write("No explicit cross-mentions found in 'Drug Interactions'.")
+            st.markdown(
+                "<div class='result-ok'><strong>No explicit cross-mentions identified in the sampled "
+                "interaction text.</strong><br>"
+                "Absence of cross-mention does not rule out clinically significant interactions.</div>",
+                unsafe_allow_html=True
+            )
 
+        st.markdown('</div>', unsafe_allow_html=True)  # close result card
 
+# ---- FOOTER / DISCLAIMER ----
 st.markdown("---")
-st.caption("⚠️ Informational only — not a clinical decision tool. Always consult authoritative interaction resources and a pharmacist.")
+st.caption(
+    "⚠️ Educational prototype only — not a clinical decision support system. "
+    "Always consult authoritative interaction resources (e.g., Lexicomp, Micromedex) and a pharmacist."
+)

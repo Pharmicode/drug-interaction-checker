@@ -1,1 +1,1 @@
-httpsdrug-interaction-checker-q4qzgkgy2bgyridrusfii3.streamlit.app
+https://drug-interaction-checker-q4qzgkgy2bgyridrusfii3.streamlit.app/
